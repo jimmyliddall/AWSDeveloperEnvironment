@@ -14,9 +14,12 @@ export class AwsDeveloperEnvironmentStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
-    const vpc = ec2.Vpc.fromLookup(this, "DefaultVPC", {isDefault: true})
+    const vpc = ec2.Vpc.fromLookup(this, "public-c9-VPC", {isDefault: false})
     const subnets = vpc.selectSubnets({
-      availabilityZones: [ `${this.region}a` ],
+      subnets: [ec2.Subnet.fromSubnetAttributes(this,'privatesubnet', {
+          subnetId: 'subnet-00f861ba1086b65cf',
+          availabilityZone: 'ap-southeast-2a'
+          })],
     })
 
     const amazonLinuxImage = new ec2.AmazonLinuxImage({
@@ -43,17 +46,18 @@ export class AwsDeveloperEnvironmentStack extends cdk.Stack {
         }
       ],
       keyName: process.env.KEYPAIR_NAME,
-      resourceSignalTimeout: Duration.minutes(30)
+//      resourceSignalTimeout: Duration.minutes(30)
     })
     devInstance.userData.addCommands(
       userData.coreInstall,
-      userData.rubyInstall,
+//      userData.rubyInstall,
       userData.nodeInstall,
       userData.pythonInstall,
-      userData.dotnetInstall,
-      userData.powerShellInstall,
+//      userData.dotnetInstall,
+//      userData.powerShellInstall,
       userData.finalise
     )
+
     devInstance.userData.addSignalOnExitCommand(devInstance)
     devInstance.userData.addOnExitCommands('reboot')
 
@@ -82,6 +86,7 @@ export class AwsDeveloperEnvironmentStack extends cdk.Stack {
       `echo 'LABEL=repos     ${mountPath}    ext4    defaults        0       0' >> /etc/fstab`
     )
 
+
     const powerOffFunction = new lambda.Function(this, "PowerOffFunction", {
       code: lambda.Code.fromInline(fs.readFileSync("./lib/poweroff.js").toString()),
       handler: 'index.handler',
@@ -105,6 +110,7 @@ export class AwsDeveloperEnvironmentStack extends cdk.Stack {
     const inactiveTopic = new sns.Topic(this, "PowerOffTopic", {})
     inactiveTopic.addSubscription(new subscriptions.LambdaSubscription(powerOffFunction))
 
+    // TODO Add a grace period to this alarm
     new cloudwatch.CfnAlarm(this, "NetworkInactiveAlarm", {
       alarmName: `${cdk.Aws.STACK_NAME}-TrafficInactive`,
       metricName: 'NetworkOut',
@@ -122,6 +128,6 @@ export class AwsDeveloperEnvironmentStack extends cdk.Stack {
       alarmActions: [
         inactiveTopic.topicArn
       ]
-    }) 
+    })
   }
 }

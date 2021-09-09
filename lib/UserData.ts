@@ -10,14 +10,14 @@ export const coreInstall = `
 yum update -y
 yum install zsh openssl-devel amazon-efs-utils nfs-utils openssl-libs compat-openssl10 krb5-libs zlib libicu libsecret gnome-keyring desktop-file-utils xorg-x11-utils -y
 yum group install "Development Tools" -y
-amazon-linux-extras install docker
+amazon-linux-extras install docker -y
 systemctl enable docker
 service docker start
 usermod -a -G docker ec2-user
 cd /home/ec2-user
-sudo -u ec2-user sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sudo -u ec2-user sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 sudo -u ec2-user git clone https://github.com/zsh-users/zsh-syntax-highlighting.git \${ZSH_CUSTOM:-/home/ec2-user/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-sudo -u ec2-user git clone https://github.com/zsh-users/zsh-autosuggestions \${ZSH_CUSTOM:-/home/ec2-user/.oh-my-zsh/custom}/plugins/zsh-autosuggestions      
+sudo -u ec2-user git clone https://github.com/zsh-users/zsh-autosuggestions \${ZSH_CUSTOM:-/home/ec2-user/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 usermod -s /usr/bin/zsh ec2-user
 rm /home/ec2-user/.zshrc
 sudo -u ec2-user cat <<EOT >> /home/ec2-user/.zshrc
@@ -39,7 +39,7 @@ plugins=(
 )
 source /home/ec2-user/.oh-my-zsh/oh-my-zsh.sh
 EOT
-sudo -u ec2-user sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+echo | sudo -u ec2-user sh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 sudo -u ec2-user echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/ec2-user/.zshrc
 sudo -u ec2-user /home/linuxbrew/.linuxbrew/bin/brew tap aws/tap
 sudo -u ec2-user /home/linuxbrew/.linuxbrew/bin/brew install aws-sam-cli
@@ -49,7 +49,6 @@ sudo -u ec2-user git config --global difftool.default-difftool.cmd "code --wait 
 echo 'fs.inotify.max_user_watches=524288' >> /etc/sysctl.conf
 sudo -u ec2-user mkdir /home/ec2-user/.aws
 sudo -u ec2-user touch /home/ec2-user/.aws/credentials
-
 sudo -u ec2-user cat <<EOT >> /home/ec2-user/.aws/config
 [default]
 output = json
@@ -76,6 +75,7 @@ sudo -u ec2-user echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_co
 nvm install ${nodeVersion}
 npm install -g aws-cdk
 npm install -g @aws-amplify/cli
+npm install -g typescript
 sudo chown ec2-user /home/ec2-user/.nvm -R
 sudo -u ec2-user echo 'export CDK_DEFAULT_ACCOUNT=${cdk.Aws.ACCOUNT_ID}' >> /home/ec2-user/.zshrc
 sudo -u ec2-user echo 'export CDK_DEFAULT_REGION=${cdk.Aws.REGION}' >> /home/ec2-user/.zshrc
@@ -84,9 +84,13 @@ sudo -u ec2-user echo 'export CDK_DEFAULT_REGION=${cdk.Aws.REGION}' >> /home/ec2
 export const pythonInstall = `
 sudo -u ec2-user git clone https://github.com/pyenv/pyenv.git /home/ec2-user/.pyenv
 sudo -u ec2-user /home/ec2-user/.pyenv/bin/pyenv install ${pythonVersion}
-sudo -u ec2-user /home/ec2-user/.pyenv/bin/pyenv global ${pythonVersion}
+sudo -u ec2-user /home/ec2-user/.pyenv/bin/pyenv global ${pythonVersion}a
+sudo -u ec2-user curl -O https://bootstrap.pypa.io/get-pip.py
+sudo -u ec2-user /usr/bin/python3 get-pip.py
+sudo -u ec2-user /usr/bin/pip3 install git-remote-codecommit
 sudo -u ec2-user echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /home/ec2-user/.zshrc
 sudo -u ec2-user echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> /home/ec2-user/.zshrc
+sudo -u ec2-user echo 'export PATH="$PATH:$HOME/.local/bin"' >> /home/ec2-user/.zshrc
 sudo -u ec2-user echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\\n  eval "$(pyenv init -)"\\nfi' >> /home/ec2-user/.zshrc
 `
 
